@@ -102,3 +102,16 @@ test('disqualifiedBibs requires timing permission, race scope, and a map', async
  await assertFails(updateDoc(doc(db('runner'),'races','race_a'),{disqualifiedBibs:{'5-001':'Forbidden'}}));
  await assertFails(updateDoc(doc(db('admin'),'races','race_a'),{disqualifiedBibs:['5-001']}));
 });
+
+test('runnerHighlights and system/highlightsConfig enforce Highlights RBAC permissions', async()=>{
+ const validHighlight={id:'hl_1',mode:'solo',runnerName:'Marco Reyes',bibNumber:'21-01',placement:'1st',distance:'21K',chipTime:'01:24:18',pace:'3:59 /km',raceName:'Manila Half',raceDate:'2026-11-10',photoUrl:'data:image/jpeg;base64,abc',borderPreset:'liquid-gold',cornerGeometry:'rounded',accentColor:'#f5b731',glowIntensity:75,surfaceFinish:'glossy',createdAt:'2026-11-10T00:00:00Z',updatedAt:'2026-11-10T00:00:00Z'};
+ await assertSucceeds(setDoc(doc(db('admin'),'runnerHighlights','hl_1'),validHighlight));
+ await assertSucceeds(getDoc(doc(env.unauthenticatedContext().firestore(),'runnerHighlights','hl_1')));
+ await assertFails(setDoc(doc(db('organizer'),'runnerHighlights','hl_org'),{...validHighlight,id:'hl_org'}));
+ await assertFails(setDoc(doc(db('runner'),'runnerHighlights','hl_run'),{...validHighlight,id:'hl_run'}));
+
+ // Admin without highlights.playlist can update marquee physics/settings, but not smart playlist rules
+ await assertSucceeds(setDoc(doc(db('admin'),'system','highlightsConfig'),{speedPxPerSec:52,hoverBehavior:'slow',direction:'left',layoutMode:'card',cardGapPx:20,edgeFadePx:48},{merge:true}));
+ await assertFails(setDoc(doc(db('admin'),'system','highlightsConfig'),{pinPodiumFirst:false},{merge:true}));
+ await assertSucceeds(setDoc(doc(db('superadmin'),'system','highlightsConfig'),{pinPodiumFirst:false,filterRaceId:'latest',hideExpired:true},{merge:true}));
+});

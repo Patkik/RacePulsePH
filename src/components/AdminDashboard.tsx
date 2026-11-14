@@ -12,7 +12,7 @@ import type { RaceSetupLaunchRequest } from './RaceSetupPanel';
 import type { LiveBroadcastLaunchRequest } from './LiveBroadcastPanel';
 import type { EngravingLaunchRequest } from './OperatorDashboard';
 import {
-  Award, CalendarDays, Timer, Tv, Flag, UserCog, Users, LogOut, CheckCircle, XCircle, ShieldCheck, Search, Trash2, Printer,
+  Award, CalendarDays, Timer, Tv, Flag, UserCog, Users, LogOut, CheckCircle, XCircle, ShieldCheck, Search, Trash2, Printer, Sparkles,
 } from 'lucide-react';
 
 const LiveBroadcastPanel = lazy(() => import('./LiveBroadcastPanel'));
@@ -22,10 +22,11 @@ const TimingConsole = lazy(() => import('./TimingConsole'));
 const RaceSetupPanel = lazy(() => import('./RaceSetupPanel'));
 const AccessPanel = lazy(() => import('./AccessPanel'));
 const BibStudioPanel = lazy(() => import('./BibStudioPanel'));
+const HighlightsStudioPanel = lazy(() => import('./HighlightsStudioPanel'));
 
-type AdminTab = 'engraving' | 'timing' | 'race' | 'bibstudio' | 'organizers' | 'runners' | 'access' | 'events' | 'hub';
+type AdminTab = 'engraving' | 'timing' | 'race' | 'bibstudio' | 'highlights' | 'organizers' | 'runners' | 'access' | 'events' | 'hub';
 
-const ADMIN_TAB_ORDER: readonly AdminTab[] = ['events', 'hub', 'engraving', 'timing', 'race', 'bibstudio', 'organizers', 'runners', 'access'];
+const ADMIN_TAB_ORDER: readonly AdminTab[] = ['events', 'hub', 'highlights', 'engraving', 'timing', 'race', 'bibstudio', 'organizers', 'runners', 'access'];
 
 interface AdminDashboardProps {
   profile: UserProfile;
@@ -76,7 +77,7 @@ export default function AdminDashboard({ profile, workspaceSwitch, pendingApprov
     setHubLaunch({ raceId, nonce: nextNonce() });
     selectTab('hub');
   };
-  const allowed: Record<AdminTab, boolean> = { engraving: can('engraving.view'), timing: can('timing.view') || can('roster.view'), race: can('race.view') || can('race.create'), bibstudio: isSuperAdmin, organizers: can('users.view') || isSuperAdmin, runners: can('users.view') || isSuperAdmin, access: isSuperAdmin, events: can('race.view'), hub: can('hub.manage') || can('hub.publish') };
+  const allowed: Record<AdminTab, boolean> = { engraving: can('engraving.view'), timing: can('timing.view') || can('roster.view'), race: can('race.view') || can('race.create'), bibstudio: isSuperAdmin, highlights: can('highlights.view') || isSuperAdmin, organizers: can('users.view') || isSuperAdmin, runners: can('users.view') || isSuperAdmin, access: isSuperAdmin, events: can('race.view'), hub: can('hub.manage') || can('hub.publish') };
   const active = allowed[tab] ? tab : (Object.keys(allowed).find(key => allowed[key]) as AdminTab);
   const homeTab: AdminTab = can('engraving.view') ? 'engraving' : (Object.keys(allowed).find(key => allowed[key]) as AdminTab) || 'events';
   const activeRef = useRef(active);
@@ -109,6 +110,7 @@ export default function AdminDashboard({ profile, workspaceSwitch, pendingApprov
   const navItems = [
     { key: 'events', icon: <CalendarDays className="w-4 h-4" />, label: 'My Events', shortLabel: 'Events', active: active === 'events', onClick: () => selectTab('events') },
     { key: 'hub', icon: <Tv className="w-4 h-4" />, label: 'Live Hub', shortLabel: 'Live Hub', active: active === 'hub', onClick: () => selectTab('hub') },
+    { key: 'highlights', icon: <Sparkles className="w-4 h-4" />, label: 'Highlights', shortLabel: 'Highlights', active: active === 'highlights', onClick: () => selectTab('highlights') },
     { key: 'engraving', icon: <Award className="w-4 h-4" />, label: 'Engraving', shortLabel: 'Engrave', active: active === 'engraving', onClick: () => selectTab('engraving') },
     { key: 'timing', icon: <Timer className="w-4 h-4" />, label: 'Timing', shortLabel: 'Timing', active: active === 'timing', onClick: () => selectTab('timing') },
     { key: 'race', icon: <Flag className="w-4 h-4" />, label: 'Race Setup', shortLabel: 'Setup', active: active === 'race', onClick: () => selectTab('race') },
@@ -172,6 +174,7 @@ export default function AdminDashboard({ profile, workspaceSwitch, pendingApprov
           {active === 'timing' && <TimingConsole uid={profile.uid} canSeeAllRaces launchRequest={timingLaunch} />}
           {active === 'race' && <RaceSetupPanel uid={profile.uid} canSeeAllRaces canDeleteRaces={isSuperAdmin} launchRequest={setupLaunch} />}
           {active === 'bibstudio' && <BibStudioPanel />}
+          {active === 'highlights' && <HighlightsStudioPanel profile={profile} />}
           {active === 'events' && (
             <MyRaceEventsPanel
               uid={profile.uid}

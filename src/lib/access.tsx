@@ -9,6 +9,7 @@ type AccessState = { overrides?: Record<string, boolean>; scope?: string; raceId
 type AccessContextValue = { can: (key: string) => boolean; inScope: (race: Race) => boolean; authority: boolean; ready: boolean; suspended: boolean; state: AccessState; version: string };
 const denied: AccessContextValue = { can: () => false, inScope: () => false, authority: false, ready: false, suspended: false, state: {}, version: '' };
 const Context = createContext(denied);
+export const AccessContext = Context;
 export const useAccess = () => useContext(Context);
 export interface ScopedRacesState {
   races: Race[];

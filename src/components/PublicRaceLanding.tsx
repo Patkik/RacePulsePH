@@ -35,6 +35,7 @@ import {
 
 const PublicLiveRaceHub = lazy(() => import('./PublicLiveRaceHub'));
 const PublicRaceResults = lazy(() => import('./PublicRaceResults'));
+import PodiumPulseReel from './PodiumPulseReel';
 
 interface PublicRaceLandingProps {
   onRegister: (raceId?: string) => void;
@@ -146,6 +147,7 @@ export default function PublicRaceLanding({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistanceFilter, setSelectedDistanceFilter] = useState<string>('all');
   const [bibQuery, setBibQuery] = useState('');
+  const [bibSearchFocused, setBibSearchFocused] = useState(false);
   const [copiedRaceId, setCopiedRaceId] = useState<string | null>(null);
   const [downloadingBibKey, setDownloadingBibKey] = useState<string | null>(null);
   const [downloadedBibKey, setDownloadedBibKey] = useState<string | null>(null);
@@ -306,6 +308,20 @@ export default function PublicRaceLanding({
     requestAnimationFrame(() => {
       document.getElementById('public-race-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  };
+
+  const handleViewHighlightLeaderboard = (raceId?: string) => {
+    if (raceId) {
+      const target = races.find((r) => r.id === raceId);
+      if (target) {
+        if (target.completedAt || target.date < today) {
+          setActiveTab('completed');
+        }
+        handleSelectRace(target.id);
+        return;
+      }
+    }
+    handleSwitchToCompletedAndSearch();
   };
 
   const handleCloseSelectedRace = () => {
@@ -510,6 +526,8 @@ export default function PublicRaceLanding({
                     type="search"
                     value={bibQuery}
                     onChange={(e) => setBibQuery(e.target.value)}
+                    onFocus={() => setBibSearchFocused(true)}
+                    onBlur={() => setBibSearchFocused(false)}
                     placeholder="Bib or name"
                     className={`h-11 pl-9 ${bibQuery ? 'pr-9' : 'pr-3'} text-xs sm:text-sm [&::-webkit-search-cancel-button]:hidden`}
                   />
@@ -733,6 +751,12 @@ export default function PublicRaceLanding({
 
         <div className="track-ticks-rule relative z-10 w-full" aria-hidden="true" />
       </section>
+
+      {/* Podium Highlights Reel directly below the Hero Search Bar */}
+      <PodiumPulseReel
+        searchFocused={bibSearchFocused || bibQuery.trim().length > 0}
+        onViewLeaderboard={handleViewHighlightLeaderboard}
+      />
 
       {/* Live Timing Feed Spotlight (Conditional on active broadcast) */}
       {liveRaces.length > 0 && (

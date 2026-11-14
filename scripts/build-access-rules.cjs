@@ -23,8 +23,8 @@ const helpers = `${markerStart}
     }
     function preset(action) {
       let role = callerDoc().data.role;
-      return role == 'superadmin' || (role == 'admin' && !action.matches('personal[.].*'))
-        || (role == 'organizer' && !action.matches('engraving[.].*') && action != 'users.view' && action != 'timing.correct')
+      return role == 'superadmin' || (role == 'admin' && !action.matches('personal[.].*') && action != 'highlights.playlist')
+        || (role == 'organizer' && !action.matches('engraving[.].*') && !action.matches('highlights[.].*') && action != 'users.view' && action != 'timing.correct')
         || (role == 'runner' && action.matches('personal[.].*'));
     }
     function rawPermission(action) { return access().get('overrides', {}).get(action, preset(action)) == true; }
@@ -153,6 +153,19 @@ block('match /orders/{orderId}',`match /orders/{orderId} {
       allow create: if isValidId(orderId) && isValidOrder(request.resource.data) && request.resource.data.status == 'queued' && (permission('engraving.create') || (permission('personal.engraving') && request.resource.data.ownerUid == request.auth.uid));
       allow update: if isValidOrder(request.resource.data) && permission('engraving.status') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']);
       allow delete: if isSuperAdmin() || (permission('personal.engraving') && resource.data.get('ownerUid', null) == request.auth.uid && resource.data.status == 'queued');
+    }`);
+block('match /runnerHighlights/{highlightId}',`match /runnerHighlights/{highlightId} {
+      allow read: if true;
+      allow create, update: if isValidId(highlightId) && permission('highlights.manage') && isValidHighlight(request.resource.data);
+      allow delete: if isSuperAdmin() || permission('highlights.manage');
+    }`);
+block('match /system/highlightsConfig',`match /system/highlightsConfig {
+      allow read: if true;
+      allow create: if permission('highlights.settings')
+        && (!request.resource.data.keys().hasAny(['pinPodiumFirst','filterRaceId','hideExpired']) || permission('highlights.playlist'));
+      allow update: if permission('highlights.settings')
+        && (!changed(['pinPodiumFirst','filterRaceId','hideExpired']) || permission('highlights.playlist'));
+      allow delete: if isSuperAdmin();
     }`);
 // Social mutations retain their existing ownership/consent restrictions.
 const socialStart=source.indexOf('match /friendRequests/'),socialEnd=source.indexOf('// ========== SYSTEM');
